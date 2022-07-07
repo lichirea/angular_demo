@@ -2,15 +2,15 @@ import {Injectable} from '@angular/core';
 import {HEROES} from "./mock-heroes";
 import {Hero} from "./heroes/hero";
 import {catchError, Observable, of, map, tap} from "rxjs";
-import { MessageService } from "./message.service";
-import { HttpClient, HttpHeaders} from "@angular/common/http";
+import {MessageService} from "./message.service";
+import {HttpClient, HttpHeaders} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
 })
 export class HeroService {
   httpOptions = {
-    headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+    headers: new HttpHeaders({'Content-Type': 'application/json'})
   };
 
   private heroesUrl = 'api/heroes';
@@ -19,7 +19,8 @@ export class HeroService {
   constructor(
     private messageService: MessageService,
     private http: HttpClient,
-  ) { }
+  ) {
+  }
 
   getHeroes(): Observable<Hero[]> {
     return this.http.get<Hero[]>(this.heroesUrl)
@@ -46,11 +47,32 @@ export class HeroService {
   }
 
   addHero(hero: Hero): Observable<any> {
-      return this.http.post<Hero>(this.heroesUrl, hero, this.httpOptions)
-        .pipe(
-          tap((newHero: Hero) => this.log(`added hero w/ id=${newHero.id}`)),
-          catchError(this.handleError<any>('addHero'))
-        );
+    return this.http.post<Hero>(this.heroesUrl, hero, this.httpOptions)
+      .pipe(
+        tap((newHero: Hero) => this.log(`added hero w/ id=${newHero.id}`)),
+        catchError(this.handleError<any>('addHero'))
+      );
+  }
+
+  deleteHero(id: number) {
+    return this.http.delete<Hero>(this.heroesUrl + '/' + id, this.httpOptions)
+      .pipe(
+        tap(_ => this.log(`deleted hero with id=${id}`)),
+        catchError(this.handleError<any>('deleteHero'))
+      );
+  }
+
+  searchHeroes(term: string): Observable<Hero[]> {
+    if(!term.trim()){
+      return of([]);
+    }
+    return this.http.get<Hero[]>(`${this.heroesUrl}/?name=${term}`)
+      .pipe(
+        tap(x => x.length ?
+          this.log(`found heroes matching "${term}"`) :
+          this.log(`no heroes matching "${term}"`)),
+        catchError(this.handleError<Hero[]>('searchHeroes', []))
+      );
   }
 
   private handleError<T>(operation = 'operation', result?: T) {
@@ -67,8 +89,9 @@ export class HeroService {
     };
   }
 
-  private log(message: string){
+  private log(message: string) {
     this.messageService.add(`HeroService: ${message}`)
   }
+
 
 }
